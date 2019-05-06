@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<!--
+ webDS: HTML5 Audio/JavaScript port of DeSmuME/2SF decoder.
+
+ Credits: 
+  * The visualization used on this page was strongly "inspired" by this demo:
+    http://html5-demos.appspot.com/static/webaudio/createMediaSourceElement.html
+
+ Copyright:
+	
+	DeSmuME v0.8.0 Copyright (C) 2006 yopyop Copyright (C) 2006-2007 DeSmuME team
+	
+	foo_input_2sf Copyright Christopher Snowhill
+	
+	web stuff Copyright © 2019 Juergen Wothke (backend_ds.js is distributed under the same GPL License 
+	used in DeSmuME, other licenses apply to the other components used on this example page.)
+-->
+<meta http-equiv="X-UA-Compatible" content="chrome=1" />
+<title>WebDS - Nintendo DS music player</title>
+
+<meta name="description" content="Experimental JavaScript version of 2SF decoder; it supports formats: .2sf & .mini2sf ">
+<meta name="author" content="Juergen Wothke">
+<meta name="keywords" content="Web Audio API, HTML5, JavaScript, Nintendo DS">
+
+<link href="stdlib/font.css" rel="stylesheet" type="text/css">
+<link href="stdlib/common.css" rel="stylesheet" type="text/css">
+<link href="add_on.css" rel="stylesheet" type="text/css">
+
+<link rel="image_src" href="screenshot.gif" />
+<meta property="og:image" content="http://www.wothke.ch/webDS/screenshot.gif" />
+
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+<link type="image/x-icon" href="favicon.ico" />
+
+<script type="text/javascript" src="stdlib/jquery1.11.min.js"></script>
+<script type="text/javascript" src="stdlib/jquery.details.min.js"></script>
+<script type="text/javascript" src="stdlib/scriptprocessor_player.min.js"></script>
+
+<script>window.openDetails=false;</script>
+<script type="text/javascript" src="stdlib/mini_display.js"></script>
+<script type="text/javascript" src="stdlib/mini_controls.js"></script>
+
+<script type="text/javascript" src="backend_ds.js"></script>
+<script>
+var playerControls;
+var	songDisplay;
+	
+// configure what music infos to display in SongDisplay
+// configure what music infos to display in SongDisplay
+DSDisplayAccessor = (function(){ var $this = function (doGetSongInfo) {
+		$this.base.call(this, doGetSongInfo);
+	}; 
+	extend(DisplayAccessor, $this, {
+		getDisplayTitle: function() 	{ return "webDS";},
+		getDisplaySubtitle: function() 	{ return "DeSmuME in action";},
+		getDisplayLine1: function() { return this.getSongInfo().title +" ("+this.getSongInfo().artist+")";},
+		getDisplayLine2: function() { return this.getSongInfo().copyright; },
+		getDisplayLine3: function() { return ""; }
+	});	return $this; })();
+		
+// link player events to "controls" and "display"
+function doOnTrackEnd(){
+	if (playerControls) playerControls.playNextSong();  
+}
+function doOnTrackReadyToPlay(){ 	
+	ScriptNodePlayer.getInstance().play();
+	songDisplay.redrawSongInfo();
+}
+function doOnPlayerReady() {
+	if (playerControls) playerControls.playNextSong();
+}
+
+function init() {
+	// --------------------------- music player -----------------------
+	var basePath= '';		// not needed here
+	ScriptNodePlayer.createInstance(new DsBackendAdapter(true), basePath, [], true, doOnPlayerReady,
+										doOnTrackReadyToPlay, doOnTrackEnd);
+		
+	// --------------------------- UI - basic player controls --------------
+	var songs = [
+		"http://ftp.modland.com/pub/modules/Nintendo%20DS%20Sound%20Format/Andras%20Kover/Scooby-Doo!%20Who's%20Watching%20Who/ntr-ac6e-usa-000a.mini2sf",
+		"http://ftp.modland.com/pub/modules/Nintendo%20DS%20Sound%20Format/Richard%20Joseph/James%20Pond%20-%20Codename%20Robocod/ntr-ajpp-eur-0000.mini2sf",
+//		"http://ftp.modland.com/pub/modules/Nintendo DS Sound Format/Akari Kaida/Rockman EXE - Operate Shooting Star/02 home town.mini2sf",
+	];
+	playerControls= new BasicPlayerControls(songs, true, false,
+				(function(someSong) {
+						var options= {};
+						return [someSong, options];
+					})
+				);
+
+	songDisplay= new SongDisplay(new DSDisplayAccessor((function(){return playerControls.getSongInfo();})), 
+								[0xd65631,0xd7e627,0x101010,0x101010], 1, 1, (function(){playerControls.animate()}));
+
+	playerControls.playNextSong();
+}
+</script>
+<script type="text/javascript" src="stdlib/analytics.js"></script>
+</head>
+
+<body onload="init();">
+<div class="tooltip" id="tooltip" alt= "This is a hobby project, but it costs not only time to regularily maintain this site but also money to pay for the internet service provider (etc). If you want to keep this site up and running.. or if you just like my work (see https://jwothke.wordpress.com/) and you'd like to see more of it in the future, please make a contribution. Thank you!"></div>
+
+<details>
+  <summary>What's this?</summary>
+  <div>
+  <p>WebDS: Experimental JavaScript/HTML5 version of kode54's <a href="https://www.foobar2000.org/components/view/foo_input_vio2sf" target="_blank">2SF decoder</a> a 
+  player for "Nintendo DS" music (based on DeSmuME).</p>
+ 
+  <p>Bring your own .mini2sf/.2sf files by dropping them onto the game console (you'll have to drop the .2sflib first - before 
+  dropping the song files that use it). Respective files can be found for example on 
+  <a href="http://ftp.modland.com/pub/modules/Nintendo%20DS%20Sound%20Format/" target="_blank">modland.com</a>.</p>
+ 
+  <p>2019 by Juergen Wothke  (The source code can be found <a target="_blank" href="https://github.com/wothke/">here</a>.)</p>
+   
+  <p>This page does not use any plugins but is based exclusively on the WebAudio API. The audio samples here 
+  are completely calculated within JavaScript by running the DeSmuME emulator logic.</p>
+ 
+  <p>Please use the below controls to navigate between the songs that you have dropped on the player:
+  <span id="controls"></span>
+ </div>
+</details>
+<aside></aside>
+<section>
+  <div id="logo">
+		<!-- in new Chrome the SHIT reflections disapear dependig on the canvas height.. what a fucking joke -->
+		<div id="moz-reflect-logo"><canvas  id="logoCanvas"  width="270" height="100"></canvas></div>	
+  </div>
+  
+  <div id="spectrum" >
+		<!-- use "hight" greater than 80 and the fucking reflection is gone.. FUCK YOU IDIOTS -->
+		<div id="moz-reflect-spectrum"><canvas id="spectrumCanvas" width="800" height="80"></canvas></div>
+  </div>
+  <div id="drop" class="drop"><img src="ds.gif"/></div><!--see BasicPlayerControls-->
+</section>
+</body>
+</html>
